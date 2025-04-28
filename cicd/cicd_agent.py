@@ -67,23 +67,12 @@ class CICDAgent:
         
         return repo_analysis
         
-    def generate_pipeline(self, repo_path: str, pipeline_type: str, output_dir: Optional[str] = None) -> Dict[str, str]:
-        """
-        Gera um pipeline CI/CD para o repositório.
-        
-        Args:
-            repo_path: Caminho para o repositório.
-            pipeline_type: Tipo de pipeline (github_actions, gitlab_ci, jenkins, azure_devops).
-            output_dir: Diretório de saída para os arquivos gerados.
-            
-        Returns:
-            Dicionário com nomes de arquivos e conteúdos gerados.
-        """
-        self.logger.info(f"Gerando pipeline do tipo {pipeline_type} para {repo_path}")
+    def generate_pipeline(self, repo_path: str, platform: str, output_dir: Optional[str] = None) -> Dict[str, str]:
+        self.logger.info(f"Gerando pipeline do tipo {platform} para {repo_path}")
         
         # Verificar se o tipo de pipeline é suportado
-        if pipeline_type not in self.generators:
-            self.logger.error(f"Tipo de pipeline não suportado: {pipeline_type}")
+        if platform not in self.generators:
+            self.logger.error(f"Tipo de pipeline não suportado: {platform}")
             return {}
         
         # Carregar análise existente ou analisar repositório
@@ -96,14 +85,14 @@ class CICDAgent:
             repo_analysis = self.analyze_repository(repo_path)
         
         # Gerar pipeline
-        generator = self.generators[pipeline_type]
+        generator = self.generators[platform]
         pipelines = generator.generate_pipeline(repo_analysis)
         
         # Salvar pipelines gerados
         if output_dir:
             target_dir = output_dir
         else:
-            target_dir = os.path.join(repo_path, ".cicd_agent", "generated", pipeline_type)
+            target_dir = os.path.join(repo_path, ".cicd_agent", "generated", platform)
         
         ensure_directory(target_dir)
         
@@ -248,46 +237,15 @@ class CICDAgent:
         
         return fixed_content
     
-    def run_cli(self):
+    def run_cli(self, args):
         """Executa o agent de CI/CD via linha de comando."""
-        parser = argparse.ArgumentParser(description="Agent de CI/CD para criação e manutenção de pipelines")
-        subparsers = parser.add_subparsers(dest="command", help="Comando a ser executado")
-
-        # Comando analyze
-        analyze_parser = subparsers.add_parser("analyze", help="Analisar repositório")
-        analyze_parser.add_argument("--repo-path", dest="repo_path", required=True, help="Caminho para o repositório")
-
-        # Comando generate
-        generate_parser = subparsers.add_parser("generate", help="Gerar pipeline CI/CD")
-        generate_parser.add_argument("--repo-path", dest="repo_path", required=True, help="Caminho para o repositório")
-        generate_parser.add_argument("--type", choices=["github_actions", "gitlab_ci", "jenkins", "azure_devops"], required=True, help="Tipo de pipeline")
-        generate_parser.add_argument("--output", help="Diretório de saída para os arquivos gerados")
-
-        # Comando optimize
-        optimize_parser = subparsers.add_parser("optimize", help="Otimizar pipeline CI/CD existente")
-        optimize_parser.add_argument("pipeline_path", help="Caminho para o arquivo de pipeline")
-        optimize_parser.add_argument("--repo-path", help="Caminho para o repositório")
-
-        # Comando detect
-        detect_parser = subparsers.add_parser("detect", help="Detectar falhas em pipeline CI/CD")
-        detect_parser.add_argument("pipeline_path", help="Caminho para o arquivo de pipeline")
-        detect_parser.add_argument("--logs", help="Caminho para o arquivo de logs de erro")
-
-        # Comando fix
-        fix_parser = subparsers.add_parser("fix", help="Corrigir falhas em pipeline CI/CD")
-        fix_parser.add_argument("pipeline_path", help="Caminho para o arquivo de pipeline")
-        fix_parser.add_argument("--failures", help="Caminho para o arquivo de falhas detectadas")
-
-        # Analisar argumentos
-        args = parser.parse_args()
-
         # Executar comando
         if args.command == "analyze":
             result = self.analyze_repository(args.repo_path)
             print(f"Análise concluída. Resultado salvo em {os.path.join(args.repo_path, '.cicd_agent', 'repo_analysis.json')}")
         elif args.command == "generate":
-            output_dir = args.output or os.path.join(args.repo_path, ".cicd_agent", "generated", args.type)
-            pipelines = self.generate_pipeline(args.repo_path, args.type, output_dir)
+            output_dir = args.output_path or os.path.join(args.repo_path, ".cicd_agent", "generated", args.platform)
+            pipelines = self.generate_pipeline(args.repo_path, args.platform, output_dir)
             if pipelines:
                 print(f"Pipelines gerados com sucesso em {output_dir}:")
                 for file_name in pipelines.keys():
@@ -315,15 +273,15 @@ class CICDAgent:
                 print(f"Pipeline corrigido com sucesso. Resultado salvo em {fixed_path}")
             else:
                 print("Falha ao corrigir pipeline.")
-        else:
-            parser.print_help()
 
 def main():
     # Configurar logging
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    
-    # Analisar argumentos
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    # Configurar parser de argumentos
     parser = argparse.ArgumentParser(description="Agent de CI/CD para criação e manutenção de pipelines")
     subparsers = parser.add_subparsers(dest="command", help="Comando a ser executado")
 
@@ -331,6 +289,28 @@ def main():
     analyze_parser = subparsers.add_parser("analyze", help="Analisar repositório")
     analyze_parser.add_argument("--repo-path", dest="repo_path", required=True, help="Caminho para o repositório")
 
+    # Comando generate
+    generate_parser = subparsers.add_parser("generate", help="Gerar pipeline CI/CD")
+    generate_parser.add_argument("--repo-path", dest="repo_path", required=True, help="Caminho para o repositório")
+    generate_parser.add_argument("--platform", choices=["github_actions", "gitlab_ci", "jenkins", "azure_devops"], required=True, help="Tipo de pipeline")
+    generate_parser.add_argument("--output-path", dest="output_path", help="Diretório de saída para os arquivos gerados")
+
+    # Comando optimize
+    optimize_parser = subparsers.add_parser("optimize", help="Otimizar pipeline CI/CD existente")
+    optimize_parser.add_argument("pipeline_path", help="Caminho para o arquivo de pipeline")
+    optimize_parser.add_argument("--repo-path", help="Caminho para o repositório")
+
+    # Comando detect
+    detect_parser = subparsers.add_parser("detect", help="Detectar falhas em pipeline CI/CD")
+    detect_parser.add_argument("pipeline_path", help="Caminho para o arquivo de pipeline")
+    detect_parser.add_argument("--logs", help="Caminho para o arquivo de logs de erro")
+
+    # Comando fix
+    fix_parser = subparsers.add_parser("fix", help="Corrigir falhas em pipeline CI/CD")
+    fix_parser.add_argument("pipeline_path", help="Caminho para o arquivo de pipeline")
+    fix_parser.add_argument("--failures", help="Caminho para o arquivo de falhas detectadas")
+
+    # Analisar argumentos
     args = parser.parse_args()
 
     # Verificar se o comando foi fornecido
@@ -338,20 +318,9 @@ def main():
         parser.print_help()
         return
 
-    # Passar repo_path para CICDAgent
-    agent = CICDAgent(repo_path=args.repo_path)
-    agent.run_cli()
-
-# def main():
-#     # Configurar logging
-#     logging.basicConfig(
-#         level=logging.INFO,
-#         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-#     )
-    
-#     # Inicializar e executar agent
-#     agent = CICDAgent()
-#     agent.run_cli()
+    # Inicializar e executar agent
+    agent = CICDAgent(repo_path=getattr(args, "repo_path", None))
+    agent.run_cli(args)
 
 if __name__ == "__main__":
     main()

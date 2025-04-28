@@ -71,15 +71,7 @@ class GitHubActionsGenerator:
         return workflows
     
     def _generate_ci_workflow(self, repo_analysis: Dict[str, Any]) -> Optional[str]:
-        """
-        Gera um workflow de CI para GitHub Actions.
-        
-        Args:
-            repo_analysis: Resultado da análise do repositório.
-            
-        Returns:
-            Conteúdo do workflow gerado ou None se não for possível gerar.
-        """
+        """Gera um workflow de CI para GitHub Actions."""
         try:
             # Determinar a linguagem principal
             languages = repo_analysis.get("languages", {})
