@@ -31,7 +31,7 @@ Esta versão inclui dois agents principais:
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/sua-organizacao/devops-agents.git
+git clone https://github.com/Jever/devops-agents.git
 cd devops-agents
 
 # Configurar ambiente virtual

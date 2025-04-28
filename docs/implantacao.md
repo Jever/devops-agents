@@ -44,7 +44,7 @@ Ambos os agents podem ser executados localmente, sem necessidade de conexão com
 ### 1. Clonar o Repositório
 
 ```bash
-git clone https://github.com/sua-organizacao/devops-agents.git
+git clone https://github.com/Jever/devops-agents.git
 cd devops-agents
 ```
 
