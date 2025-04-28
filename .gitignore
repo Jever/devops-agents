@@ -1,0 +1,38 @@
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Pastas de ambiente virtual (Python)
+venv/
+
+# Pastas de build
+dist/
+build/
+out/
+
+# Dependências (Node.js / outros)
+node_modules/
+
+# Arquivos temporários
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Configurações de IDE
+.vscode/
+.idea/
+*.iml
+
+# Arquivos de sistema ocultos
+*.bak
+*.old
+
+# Docker / Containers
+*.pid
+
+# Arquivos de backup
+*~
+
+# Outros
+.env
